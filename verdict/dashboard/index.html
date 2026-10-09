@@ -27,7 +27,7 @@
       <button data-range="86400">24h</button>
       <button data-range="604800">7d</button>
     </div>
-    <label class="checks"><label><input type="checkbox" id="auto" checked> Auto-refresh</label></label>
+    <div class="checks"><label><input type="checkbox" id="auto" checked> Auto-refresh</label></div>
     <button class="btn small" id="theme" title="Toggle theme">Theme</button>
   </div>
 </header>
@@ -65,7 +65,7 @@
           <select id="pg-scale"><option value="1-5">1 – 5</option><option value="1-3">1 – 3</option><option value="0-9">0 – 9</option><option value="1-7">1 – 7</option></select>
         </label>
         <label class="field" style="max-width:160px">Position debias
-          <select id="pg-debias"><option value="false">Off</option><option value="true">On (2 calls)</option></select>
+          <select id="pg-debias"><option value="false">Off</option><option value="true">Reverse (2 calls)</option><option value="rotate">Every rotation (1 call per option)</option></select>
         </label>
       </div>
       <label class="field">Context <span class="help">the input the decision is about: an email, a ticket, game state…</span>
@@ -97,9 +97,11 @@ Spam</textarea>
     <div class="panel stack">
       <h2>Add a model</h2>
       <div class="row">
+        <label class="field">Preset <select id="m-preset"><option value="">Custom</option></select></label>
         <label class="field">Name <input type="text" id="m-name" placeholder="e.g. qwen-local"></label>
         <label class="field">Backend <select id="m-backend"></select></label>
       </div>
+      <div class="help" id="m-preset-note">Pick a provider to fill in the settings.</div>
       <div class="row" id="m-fields"></div>
       <div><button class="btn primary" id="m-add">Save model</button></div>
     </div>
@@ -110,10 +112,11 @@ Spam</textarea>
     <div class="panel stack">
       <h2>Evaluate &amp; calibrate <span class="hint">labelled examples, one JSON object per line</span></h2>
       <textarea id="ev-data" rows="9"></textarea>
-      <div class="help">Fields: <code>question</code>, <code>answer</code>, optional <code>options</code>, <code>context</code>, <code>kind</code> (choice / binary / score), <code>scale</code>. Binary answers are <code>Yes</code>/<code>No</code>.</div>
+      <div class="help">Fields: <code>question</code>, <code>answer</code>, optional <code>options</code>, <code>context</code>, <code>kind</code> (choice / binary / score), <code>scale</code>. Binary answers are <code>Yes</code>/<code>No</code>.
+        Calibration needs at least 30 examples with some mistakes. <button class="btn small" id="ev-load" type="button">Load the 36-example benchmark</button></div>
       <div class="checks" id="ev-models"></div>
       <div class="row" style="align-items:center">
-        <label class="checks" style="flex:0 0 auto"><label><input type="checkbox" id="ev-log"> Log results to the overview</label></label>
+        <div class="checks" style="flex:0 0 auto"><label><input type="checkbox" id="ev-log"> Log results to the overview</label></div>
         <div style="flex:0 0 auto"><button class="btn primary" id="ev-run">Run evaluation</button> <span class="help" id="ev-status"></span></div>
       </div>
     </div>

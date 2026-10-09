@@ -23,10 +23,14 @@ class Decision(BaseModel):
     context: str | None = None
     scale: tuple[int, int] = (1, 5)
     instructions: str | None = None
-    debias: bool = False  # choice only: also ask with options reversed and average (2x cost, less position bias)
+    # choice only. True: also ask with options reversed and average (2x cost).
+    # "rotate": ask once per cyclic rotation of the options (n x cost), which cancels position bias fully.
+    debias: bool | Literal["rotate"] = False
+    # Below this confidence the result is flagged `abstained` (e.g. send it to a human).
+    min_confidence: float | None = Field(default=None, ge=0, le=1)
 
     @model_validator(mode="after")
-    def _check(self) -> "Decision":
+    def _check(self) -> Decision:
         if self.kind == "choice":
             if len(self.options) < 2:
                 raise ValueError("choice decisions need at least 2 options")
@@ -54,4 +58,5 @@ class Result(BaseModel):
     latency_ms: float
     temperature: float = 1.0
     top_tokens: list[tuple[str, float]] = Field(default_factory=list)
+    abstained: bool = False  # confidence fell below Decision.min_confidence
     id: int | None = None  # set when logged by the server

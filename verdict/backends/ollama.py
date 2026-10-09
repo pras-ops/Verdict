@@ -26,6 +26,10 @@ class OllamaBackend(Backend):
         self.client = httpx.Client(timeout=float(config.get("timeout", 300.0)))
         self._think_supported: bool | None = None
 
+    @property
+    def prefills(self) -> bool:
+        return bool(self.config.get("prefill", True))
+
     def _messages(self, prompt: Prompt, prefill: bool) -> list[dict]:
         msgs = list(prompt.messages)
         if prefill:
@@ -61,7 +65,7 @@ class OllamaBackend(Backend):
     def top_logprobs(self, prompt: Prompt, k: int = 20) -> list[tuple[str, float]]:
         data = self._chat(
             {
-                "messages": self._messages(prompt, bool(self.config.get("prefill", True))),
+                "messages": self._messages(prompt, self.prefills),
                 "logprobs": True,
                 "top_logprobs": min(k, 20),
                 "options": {"num_predict": 1, "temperature": 0},

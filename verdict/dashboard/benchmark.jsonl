@@ -1,0 +1,36 @@
+{"context": "Hi team, the Q3 budget review moved to Thursday 3pm. Please bring your updated forecasts.", "question": "Which folder should this email go to?", "options": ["Work", "Personal", "Spam"], "answer": "Work"}
+{"context": "Mum here - don't forget Grandma's birthday lunch on Sunday, 1pm at our place!", "question": "Which folder should this email go to?", "options": ["Work", "Personal", "Spam"], "answer": "Personal"}
+{"context": "CONGRATULATIONS! Your number was selected for a $5,000 gift card. Click to claim within 24h.", "question": "Which folder should this email go to?", "options": ["Work", "Personal", "Spam"], "answer": "Spam"}
+{"context": "From: IT-Helpdesk <it-support@micros0ft-security.co>. Your work password expires today. Log in here to keep access: http://bit.ly/x9a2", "question": "Which folder should this email go to?", "options": ["Work", "Personal", "Spam"], "answer": "Spam"}
+{"context": "Hey! It's Priya from the office - want to grab a beer this weekend? Not work stuff, promise.", "question": "Which folder should this email go to?", "options": ["Work", "Personal", "Spam"], "answer": "Personal"}
+{"context": "Attached is the signed contract from Acme Corp. Legal needs your initials on page 4 by Friday.", "question": "Which folder should this email go to?", "options": ["Work", "Personal", "Spam"], "answer": "Work"}
+{"context": "Dear friend, I am a prince with $10M stuck in a bank. I need your help to transfer it and you keep 30%.", "question": "Which folder should this email go to?", "options": ["Work", "Personal", "Spam"], "answer": "Spam"}
+{"context": "Your dentist appointment is confirmed for Tuesday 10am. Reply C to cancel.", "question": "Which folder should this email go to?", "options": ["Work", "Personal", "Spam"], "answer": "Personal"}
+{"context": "I was charged twice for my subscription this month. Please refund one of the payments.", "question": "Which team should handle this support ticket?", "options": ["Billing", "Technical support", "Sales", "Account security"], "answer": "Billing"}
+{"context": "The app crashes every time I open the settings page on Android 15.", "question": "Which team should handle this support ticket?", "options": ["Billing", "Technical support", "Sales", "Account security"], "answer": "Technical support"}
+{"context": "We are a 500-person company. Can we get a quote for the enterprise plan with SSO?", "question": "Which team should handle this support ticket?", "options": ["Billing", "Technical support", "Sales", "Account security"], "answer": "Sales"}
+{"context": "I got an email saying someone logged into my account from Russia. I did not do that.", "question": "Which team should handle this support ticket?", "options": ["Billing", "Technical support", "Sales", "Account security"], "answer": "Account security"}
+{"context": "My invoice shows the wrong company address, can you fix it before our accountant files it?", "question": "Which team should handle this support ticket?", "options": ["Billing", "Technical support", "Sales", "Account security"], "answer": "Billing"}
+{"context": "After I reset my password, the export button stopped working and shows error 500.", "question": "Which team should handle this support ticket?", "options": ["Billing", "Technical support", "Sales", "Account security"], "answer": "Technical support"}
+{"context": "Someone changed my account email and I cannot log in anymore. Please help urgently.", "question": "Which team should handle this support ticket?", "options": ["Billing", "Technical support", "Sales", "Account security"], "answer": "Account security"}
+{"context": "Do you offer a discount for non-profits if we buy 50 seats?", "question": "Which team should handle this support ticket?", "options": ["Billing", "Technical support", "Sales", "Account security"], "answer": "Sales"}
+{"context": "The production database is down and no customer can complete a payment.", "question": "Is this urgent?", "kind": "binary", "answer": "Yes"}
+{"context": "Reminder: the office plants get watered on Fridays.", "question": "Is this urgent?", "kind": "binary", "answer": "No"}
+{"context": "Our SSL certificate expires in 2 hours and the site will show a security warning to every visitor.", "question": "Is this urgent?", "kind": "binary", "answer": "Yes"}
+{"context": "Could you update the font on the About page sometime next quarter?", "question": "Is this urgent?", "kind": "binary", "answer": "No"}
+{"context": "A customer reports their card was charged 40 times in the last 10 minutes and it is still happening.", "question": "Is this urgent?", "kind": "binary", "answer": "Yes"}
+{"context": "URGENT!!! Please read: our newsletter has 5 new tips for a calmer morning routine.", "question": "Is this urgent?", "kind": "binary", "answer": "No"}
+{"context": "The fire alarm on floor 3 is going off and people smell smoke.", "question": "Is this urgent?", "kind": "binary", "answer": "Yes"}
+{"context": "The coffee machine on floor 2 is making a strange noise but still works.", "question": "Is this urgent?", "kind": "binary", "answer": "No"}
+{"context": "Oh great, my flight got cancelled again. Just what I needed today.", "question": "Is the writer being sarcastic?", "kind": "binary", "answer": "Yes"}
+{"context": "Thank you so much for fixing my laptop so quickly, it works perfectly now.", "question": "Is the writer being sarcastic?", "kind": "binary", "answer": "No"}
+{"context": "Wow, another meeting that could have been an email. I love my job.", "question": "Is the writer being sarcastic?", "kind": "binary", "answer": "Yes"}
+{"context": "The new park downtown is lovely; we had a picnic there on Saturday.", "question": "Is the writer being sarcastic?", "kind": "binary", "answer": "No"}
+{"context": "Absolutely loved it. Best purchase I've made all year!", "question": "How positive is this product review?", "kind": "score", "scale": [1, 5], "answer": "5"}
+{"context": "Broke after two days. Total waste of money.", "question": "How positive is this product review?", "kind": "score", "scale": [1, 5], "answer": "1"}
+{"context": "It's okay. Does the job, nothing special, a bit overpriced.", "question": "How positive is this product review?", "kind": "score", "scale": [1, 5], "answer": "3"}
+{"context": "Really good headphones, great sound. The case feels a little cheap though.", "question": "How positive is this product review?", "kind": "score", "scale": [1, 5], "answer": "4"}
+{"context": "Mostly disappointing. The battery barely lasts a day, though the screen is nice.", "question": "How positive is this product review?", "kind": "score", "scale": [1, 5], "answer": "2"}
+{"context": "Average blender. Works fine for smoothies, struggles with ice.", "question": "How positive is this product review?", "kind": "score", "scale": [1, 5], "answer": "3"}
+{"context": "Very happy with this chair, my back pain is gone. Assembly took a while.", "question": "How positive is this product review?", "kind": "score", "scale": [1, 5], "answer": "4"}
+{"context": "Arrived late and scratched. Customer service did eventually replace it.", "question": "How positive is this product review?", "kind": "score", "scale": [1, 5], "answer": "2"}

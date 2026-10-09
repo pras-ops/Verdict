@@ -5,9 +5,10 @@ from .huggingface import HuggingFaceBackend
 from .mock import MockBackend
 from .ollama import OllamaBackend
 from .openai_compat import OpenAICompatBackend
+from .systemone import SystemOneBackend
 
 BACKENDS: dict[str, type[Backend]] = {
-    b.kind: b for b in (OllamaBackend, OpenAICompatBackend, HuggingFaceBackend, MockBackend)
+    b.kind: b for b in (OllamaBackend, OpenAICompatBackend, HuggingFaceBackend, SystemOneBackend, MockBackend)
 }
 
 

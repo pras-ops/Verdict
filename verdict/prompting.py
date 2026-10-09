@@ -19,6 +19,9 @@ class Prompt:
     labels: list[str]  # what the model should emit, e.g. ["A", "B"] or ["Yes", "No"] or ["1".."5"]
     options: list[str]  # human-readable option for each label, same order
     prefill: str = PREFILL
+    input_text: str = ""  # the raw text being judged (context, else question), for classifier heads
+    kind: str = "choice"  # the Decision's kind, for backends that take typed questions (systemone)
+    question: str = ""
 
 
 def build_prompt(d: Decision, order: list[int] | None = None) -> Prompt:
@@ -51,4 +54,11 @@ def build_prompt(d: Decision, order: list[int] | None = None) -> Prompt:
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": "\n\n".join(parts)},
     ]
-    return Prompt(messages=messages, labels=labels, options=opts)
+    return Prompt(
+        messages=messages,
+        labels=labels,
+        options=opts,
+        input_text=(d.context or d.question).strip(),
+        kind=d.kind,
+        question="\n\n".join(p for p in (d.instructions, d.question) if p).strip(),
+    )

@@ -14,14 +14,26 @@ const fmt = {
 
 const state = { range: 3600, models: [], backends: {}, timer: null };
 
-async function api(path, opts = {}) {
-  const r = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
+function getToken() {
+  try { return localStorage.getItem("verdict.token") || ""; } catch { return ""; }
+}
+
+async function api(path, opts = {}, retried = false) {
+  const headers = { "Content-Type": "application/json" };
+  const token = getToken();
+  if (token) headers.Authorization = "Bearer " + token;
+  const r = await fetch(path, { ...opts, headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  // Server started with --token: ask once, remember it in this browser, retry.
+  if (r.status === 401 && !retried) {
+    const t = prompt("This Verdict server needs its access token (the --token it was started with):");
+    if (t) {
+      try { localStorage.setItem("verdict.token", t.trim()); } catch {}
+      return api(path, opts, true);
+    }
+  }
   const text = await r.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = { detail: text.slice(0, 200) }; }
   if (!r.ok) throw new Error((data && (data.detail?.[0]?.msg || data.detail)) || r.statusText);
   return data;
 }
@@ -212,7 +224,9 @@ async function refreshOverview() {
     : `<tbody><tr><td class="empty">Nothing logged in this range.</td></tr></tbody>`;
   $$("#recent select.fb").forEach((s) =>
     s.addEventListener("change", async () => {
-      await api(`/api/decisions/${s.dataset.id}/feedback`, { method: "POST", body: { label: s.value || null } });
+      try {
+        await api(`/api/decisions/${s.dataset.id}/feedback`, { method: "POST", body: { label: s.value || null } });
+      } catch (e) { toast(e.message, true); }
       refreshOverview();
     })
   );
@@ -254,7 +268,9 @@ async function loadModels() {
     });
     $(".del", tr).addEventListener("click", async () => {
       if (!confirm(`Remove model "${name}"? Its logged decisions are kept.`)) return;
-      await api(`/api/models/${encodeURIComponent(name)}`, { method: "DELETE" });
+      try {
+        await api(`/api/models/${encodeURIComponent(name)}`, { method: "DELETE" });
+      } catch (err) { toast(err.message, true); }
       await loadModels();
     });
     $(".temp", tr).addEventListener("change", async (e) => {
@@ -273,6 +289,47 @@ async function loadModels() {
   checks("pg-models");
   checks("ev-models");
 }
+
+// One-click settings for common providers. Notes say whether real probabilities come back.
+const PRESETS = [
+  { label: "Ollama (local)", name: "local", backend: "ollama", config: { model: "qwen3:4b", host: "http://127.0.0.1:11434" },
+    note: "Real probabilities (Ollama 0.12.11+). Pull the model first: ollama pull qwen3:4b" },
+  { label: "OpenAI", name: "openai", backend: "openai", config: { model: "gpt-4.1-mini", base_url: "https://api.openai.com/v1", api_key_env: "OPENAI_API_KEY" },
+    note: "gpt-4.1 / gpt-4o give real probabilities; gpt-5.1+ and GPT-6 get reasoning_effort=none automatically; gpt-5 and o-series fall back to plain answers." },
+  { label: "OpenRouter", name: "openrouter", backend: "openai", config: { model: "openai/gpt-4.1-mini", base_url: "https://openrouter.ai/api/v1", api_key_env: "OPENROUTER_API_KEY" },
+    note: "Probabilities depend on the provider behind the model; others fall back to plain answers." },
+  { label: "vLLM", name: "vllm", backend: "openai", config: { model: "Qwen/Qwen2.5-7B-Instruct", base_url: "http://localhost:8000/v1", api_key_env: "VLLM_API_KEY", prefill: true },
+    note: "Real probabilities, with the 'Answer:' prefill." },
+  { label: "llama.cpp server", name: "llamacpp", backend: "openai", config: { model: "local", base_url: "http://localhost:8080/v1", api_key_env: "LLAMACPP_API_KEY" },
+    note: "Real probabilities from llama-server." },
+  { label: "LM Studio", name: "lmstudio", backend: "openai", config: { model: "qwen2.5-7b-instruct", base_url: "http://localhost:1234/v1", api_key_env: "LMSTUDIO_API_KEY" },
+    note: "LM Studio's chat endpoint returns no probabilities, so answers are plain (constrained)." },
+  { label: "Groq", name: "groq", backend: "openai", config: { model: "llama-3.3-70b-versatile", base_url: "https://api.groq.com/openai/v1", api_key_env: "GROQ_API_KEY" },
+    note: "Groq returns no probabilities: plain answers only." },
+  { label: "Jev (TypeSafe)", name: "jev", backend: "systemone", config: { model: "jev-latest", base_url: "https://api.typesafe.ai/v1", api_key_env: "TYPESAFE_API_KEY" },
+    note: "Hosted decision model; Verdict adds calibration, debiasing and evaluation on top." },
+  { label: "Ollama decision models", name: "ollama-decide", backend: "systemone", config: { model: "tev1:4b", base_url: "http://127.0.0.1:11434/v1" },
+    note: "Ollama 0.35+ decision models behind /v1/systemone." },
+  { label: "Another Verdict server", name: "remote-verdict", backend: "systemone", config: { model: "jev-latest", base_url: "http://other-host:8420/v1", api_key_env: "VERDICT_REMOTE_API_KEY" },
+    note: "Uses that server's /v1/systemone endpoint; its --token goes in the env var." },
+  { label: "Demo (no model)", name: "demo", backend: "mock", config: { model: "mock" },
+    note: "A fake model for trying the dashboard." },
+];
+
+function applyPreset() {
+  const p = PRESETS[+$("#m-preset").value - 1];
+  if (!p) { $("#m-preset-note").textContent = "Pick a provider to fill in the settings."; return; }
+  $("#m-backend").value = p.backend;
+  renderBackendFields();
+  $$("#m-fields [data-key]").forEach((i) => {
+    if (i.dataset.key in p.config) i.value = String(p.config[i.dataset.key]);
+    else if (i.dataset.key === "api_key_env") i.value = "";
+  });
+  $("#m-name").value = p.name;
+  $("#m-preset-note").textContent = p.note;
+}
+$("#m-preset").innerHTML += PRESETS.map((p, i) => `<option value="${i + 1}">${esc(p.label)}</option>`).join("");
+$("#m-preset").addEventListener("change", applyPreset);
 
 function renderBackendFields() {
   const b = $("#m-backend").value;
@@ -316,7 +373,7 @@ $("#pg-run").addEventListener("click", async () => {
     models, kind,
     question: $("#pg-question").value,
     context: $("#pg-context").value || null,
-    debias: $("#pg-debias").value === "true",
+    debias: { true: true, false: false, rotate: "rotate" }[$("#pg-debias").value],
   };
   if (kind === "choice") body.options = $("#pg-options").value.split("\n").map((s) => s.trim()).filter(Boolean);
   if (kind === "score") body.scale = $("#pg-scale").value.split("-").map(Number);
@@ -364,6 +421,15 @@ $("#ev-data").value = [
   { context: "Weekly newsletter: 5 tips for better sleep.", question: "Is this urgent?", kind: "binary", answer: "No" },
 ].map((o) => JSON.stringify(o)).join("\n");
 
+$("#ev-load").addEventListener("click", async () => {
+  try {
+    const r = await fetch("/static/benchmark.jsonl");
+    if (!r.ok) throw new Error(r.statusText);
+    $("#ev-data").value = (await r.text()).trim();
+    toast("Loaded 36 labelled examples: email folders, support routing, urgency, sarcasm and review scores");
+  } catch (e) { toast("Could not load the benchmark: " + e.message, true); }
+});
+
 $("#ev-run").addEventListener("click", async () => {
   const models = $$("#ev-models input:checked").map((i) => i.value);
   if (!models.length) return toast("Pick at least one model", true);
@@ -385,11 +451,16 @@ $("#ev-run").addEventListener("click", async () => {
         <td class="num">${fmt.num(r.raw.log_loss)} → ${fmt.num(r.calibrated.log_loss)}</td>
         <td class="num">${fmt.num(r.raw.ece)} → ${fmt.num(r.calibrated.ece)}</td>
         <td class="num">${r.fitted_temperature}</td><td class="num">${fmt.ms(r.avg_latency_ms)}</td>
-        <td><button class="btn small apply" data-model="${esc(r.model)}" data-t="${r.fitted_temperature}">Apply temp.</button></td></tr>`).join("") + "</tbody>";
+        <td>${r.reliable
+          ? `<button class="btn small apply" data-model="${esc(r.model)}" data-t="${r.fitted_temperature}">Apply temp.</button>`
+          : `<button class="btn small" disabled title="${esc(r.warning || "")}">Apply temp.</button>`}</td></tr>
+        ${r.reliable ? "" : `<tr><td colspan="9" class="help"><span class="status warn">Not enough evidence</span> ${esc(r.model)}: ${esc(r.warning || "")}</td></tr>`}`).join("") + "</tbody>";
     $$("#ev-results .apply").forEach((b) => b.addEventListener("click", async () => {
-      await api(`/api/models/${encodeURIComponent(b.dataset.model)}/temperature`, { method: "PUT", body: { temperature: +b.dataset.t } });
-      toast(`${b.dataset.model}: calibration temperature set to ${b.dataset.t}`);
-      loadModels();
+      try {
+        await api(`/api/models/${encodeURIComponent(b.dataset.model)}/temperature`, { method: "PUT", body: { temperature: +b.dataset.t } });
+        toast(`${b.dataset.model}: calibration temperature set to ${b.dataset.t}`);
+        loadModels();
+      } catch (e) { toast(e.message, true); }
     }));
   } catch (e) { toast(e.message, true); }
   $("#ev-status").textContent = "";

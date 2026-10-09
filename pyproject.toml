@@ -1,13 +1,29 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "verdict"
-version = "0.1.0"
-description = "Turn any LLM into a calibrated decision engine: choices, yes/no and scores from token probabilities."
+name = "verdict-llm"
+version = "0.2.0"
+description = "Turn any LLM into a calibrated decision engine: choices, yes/no and scores from token probabilities, with a Jev-compatible API, dashboard and MCP server."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "pras-ops" }]
 requires-python = ">=3.10"
+keywords = ["llm", "classification", "logprobs", "calibration", "decision", "ollama", "openai", "jev", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
 dependencies = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
@@ -17,7 +33,14 @@ dependencies = [
 
 [project.optional-dependencies]
 hf = ["transformers>=4.44", "torch>=2.2"]
-dev = ["pytest>=8"]
+mcp = ["mcp>=1.2"]
+dev = ["pytest>=8", "ruff>=0.6", "mcp>=1.2", "httpx2>=2.0"]
+
+[project.urls]
+Homepage = "https://github.com/pras-ops/Verdict"
+Repository = "https://github.com/pras-ops/Verdict"
+Issues = "https://github.com/pras-ops/Verdict/issues"
+Changelog = "https://github.com/pras-ops/Verdict/blob/main/CHANGELOG.md"
 
 [project.scripts]
 verdict = "verdict.cli:main"
@@ -26,4 +49,19 @@ verdict = "verdict.cli:main"
 include = ["verdict*"]
 
 [tool.setuptools.package-data]
-verdict = ["dashboard/*"]
+verdict = ["dashboard/*", "py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live: talks to a real local Ollama (skipped unless it is running with the model in VERDICT_LIVE_MODEL)",
+    "hf: runs a real Hugging Face model (skipped unless transformers is installed and VERDICT_HF_MODEL is cached)",
+]
+
+[tool.ruff]
+line-length = 150
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["B008", "B905", "E741"]

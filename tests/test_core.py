@@ -111,3 +111,77 @@ def test_evaluate_reports_metrics():
     out = evaluate(v, ex)
     assert out["n"] == 3 and out["error_count"] == 1
     assert out["raw"]["accuracy"] == 1.0
+
+
+# -- added in 0.2 ------------------------------------------------------------------
+def test_calibration_refuses_to_recommend_from_too_few_or_perfect_examples():
+    v = Verdict.from_backend("mock", model="mock", latency_ms=0)
+    ex = [{"question": "red apple", "options": ["red apple", "blue sky"], "answer": "red apple"}] * 5
+    out = evaluate(v, ex)
+    assert out["reliable"] is False and "at least 30" in out["warning"]
+    assert 0.25 <= out["fitted_temperature"] <= 20  # never below the search range
+    out = evaluate(v, ex * 8)  # 40 examples, all right: still nothing to calibrate against
+    assert out["reliable"] is False and "every example right" in out["warning"]
+
+
+def test_calibration_recommends_with_enough_mixed_examples():
+    v = Verdict(Fixed(p=0.95))  # always 95% on the first option
+    ex = [{"question": "q", "options": ["x", "y"], "answer": "x"}] * 21 + [{"question": "q", "options": ["x", "y"], "answer": "y"}] * 9
+    out = evaluate(v, ex)
+    assert out["reliable"] is True and out["warning"] is None and out["fitted_temperature"] > 1
+
+
+def test_calibration_ignores_constrained_answers_and_accepts_answer_case():
+    out = evaluate(Verdict(NoLogprobs()), [{"question": "q", "kind": "binary", "answer": "no"}])
+    assert out["error_count"] == 0 and out["fit_examples"] == 0 and out["fitted_temperature"] == 1.0
+
+
+def test_rotate_debias_cancels_position_bias_for_many_options():
+    r = Verdict(Fixed(p=0.7)).choose("q", ["a", "b", "c", "d"], debias="rotate")
+    assert all(p == pytest.approx(0.25) for p in r.probs.values())
+
+
+def test_min_confidence_flags_abstention():
+    v = Verdict(Fixed(p=0.6))
+    assert v.choose("q", ["x", "y"], min_confidence=0.8).abstained is True
+    assert v.choose("q", ["x", "y"], min_confidence=0.5).abstained is False
+
+
+def test_decide_many_keeps_order_and_can_return_errors():
+    v = Verdict(Fixed(p=0.8))
+    out = v.decide_many([{"question": "q", "options": ["x", "y"]}, {"question": "q", "options": ["solo"]}], return_exceptions=True)
+    assert out[0].choice == "x" and isinstance(out[1], Exception)
+    with pytest.raises(ValueError):
+        v.decide_many([{"question": "q", "options": ["solo"]}])
+
+
+def test_ask_returns_the_jev_response_shape():
+    res = Verdict(Fixed(p=0.8)).ask(
+        {"subject": "Stripe 403", "body": "keeps failing"},  # structured state is allowed
+        {
+            "urgent": {"type": "noul", "instructions": "Needs a reply today?", "criteria": {"true": "Blocking", "false": "Can wait"}},
+            "team": {"type": "choice", "instructions": "Which team?", "criteria": {"billing": "Payments", "technical": "Bugs"}},
+            "mood": {"type": "score", "instructions": "How frustrated?", "criteria": ["Calm", "Annoyed", "Furious"]},
+        },
+    )
+    a = res["answers"]
+    assert a["urgent"] == {"type": "noul", "noul": pytest.approx(0.8)}
+    assert a["team"]["choice"] == "billing" and set(a["team"]["probabilities"]) == {"billing", "technical"}
+    assert 0 <= a["team"]["confidence"] <= 1
+    assert a["mood"]["legend"] == {"0": "Calm", "1": "Annoyed", "2": "Furious"}
+    assert a["mood"]["score"] == pytest.approx(0.8 * 0 + 0.1 * 1 + 0.1 * 2)
+    assert res["usage"]["output_tokens"] == 3
+
+
+def test_jev_questions_are_validated():
+    from verdict.jev import Question
+
+    with pytest.raises(ValueError):
+        Question(type="score", instructions="?", criteria=["only one level"])
+    with pytest.raises(ValueError):
+        Question(type="choice", instructions="?", criteria={f"o{i}": "" for i in range(27)})
+
+
+def test_prompt_carries_raw_input_text_for_classifier_heads():
+    assert build_prompt(Decision(question="q", options=["x", "y"], context=" the email ")).input_text == "the email"
+    assert build_prompt(Decision(kind="binary", question="Is it spam?")).input_text == "Is it spam?"

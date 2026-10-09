@@ -27,7 +27,7 @@ class MockBackend(Backend):
         text = prompt.messages[-1]["content"].lower()
         sharp = float(self.config.get("sharpness", 3.0))
         scores = []
-        for label, option in zip(prompt.labels, prompt.options):
+        for _label, option in zip(prompt.labels, prompt.options):
             words = [w for w in option.lower().split() if len(w) > 2]
             overlap = sum(max(0, text.count(w) - 1) for w in words)  # minus the option listing itself
             jitter = int(hashlib.md5(f"{text}|{option}".encode()).hexdigest()[:6], 16) / 0xFFFFFF

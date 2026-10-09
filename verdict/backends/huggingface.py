@@ -31,9 +31,10 @@ class HuggingFaceBackend(Backend):
             return
         try:
             import torch
+            import transformers
             from transformers import AutoModelForCausalLM, AutoModelForSequenceClassification, AutoTokenizer
         except ImportError as e:
-            raise BackendError("install extras: pip install 'verdict[hf]'") from e
+            raise BackendError("install the extra: pip install 'verdict-llm[hf]'") from e
         name = self.config["model"]
         device = self.config.get("device", "auto")
         if device == "auto":
@@ -41,8 +42,11 @@ class HuggingFaceBackend(Backend):
         dtype = self.config.get("dtype", "auto")
         torch_dtype = "auto" if dtype == "auto" else getattr(torch, dtype)
         cls = AutoModelForSequenceClassification if self.config.get("mode") == "classifier" else AutoModelForCausalLM
+        # transformers 4.56 renamed torch_dtype= to dtype=
+        major, minor = (int(x) for x in transformers.__version__.split(".")[:2])
+        dtype_kw = "dtype" if (major, minor) >= (4, 56) else "torch_dtype"
         self._tok = AutoTokenizer.from_pretrained(name)
-        self._model = cls.from_pretrained(name, torch_dtype=torch_dtype).to(device).eval()
+        self._model = cls.from_pretrained(name, **{dtype_kw: torch_dtype}).to(device).eval()
         self._device = device
 
     # ------------------------------------------------------------------
@@ -104,7 +108,8 @@ class HuggingFaceBackend(Backend):
     def _classify(self, prompt: Prompt):
         import torch
 
-        text = prompt.messages[-1]["content"]
+        # A fine-tuned classification head was trained on the raw text, not our chat prompt.
+        text = prompt.input_text or prompt.messages[-1]["content"]
         enc = self._tok(text, return_tensors="pt", truncation=True).to(self._device)
         with torch.no_grad():
             logp = torch.log_softmax(self._model(**enc).logits[0].float(), dim=-1)
