@@ -1,0 +1,19 @@
+# Local decision log (may contain your prompts)
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.venv/
+venv/
+
+# Editors / tools
+.claude/
+.vscode/
+.idea/
